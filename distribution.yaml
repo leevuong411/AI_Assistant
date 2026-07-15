@@ -1,0 +1,5 @@
+name: assistant
+version: 1.0.0
+description: "AI assistant chung — Skills/Config/Workflow; model & memory theo từng node"
+author: "Lee"
+hermes_requires: ">=0.14.0"
