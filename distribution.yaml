@@ -1,8 +1,14 @@
 name: assistant
 version: 1.0.0
+<<<<<<< HEAD
 description: "AI assistant chung \u2014 Skills/Config/Workflow; model & memory theo\
   \ t\u1EEBng node"
 hermes_requires: '>=0.14.0'
 author: Lee
 source: git@github.com:leevuong411/AI_Assistant.git
 installed_at: '2026-07-16T02:43:52+00:00'
+=======
+description: "AI assistant chung — Skills/Config/Workflow; model & memory theo từng node"
+author: "Lee"
+hermes_requires: ">=0.14.0"
+>>>>>>> origin/main

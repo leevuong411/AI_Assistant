@@ -29,6 +29,7 @@ Two Hermes instances (server + desktop) each with their own Telegram bot:
 
 ## Sync: Skills & Memories
 
+<<<<<<< HEAD
 > ⚠️ **DEPRECATED — do not use the rsync approach below.** It predates the current profile-based
 > setup (server: profile `default` → `~/.hermes/`; laptop: profile `assistant` →
 > `~/.hermes/profiles/assistant/`), so the paths no longer match and running it will not sync the
@@ -45,6 +46,12 @@ Two Hermes instances (server + desktop) each with their own Telegram bot:
 ```bash
 #!/bin/bash
 # hermes-sync.sh — run on MacBook (OBSOLETE — paths predate profile-based setup)
+=======
+### Direct rsync (recommended over Git for simplicity)
+```bash
+#!/bin/bash
+# hermes-sync.sh — run on MacBook
+>>>>>>> origin/main
 SERVER="root@server-ip"
 PROFILE="$HOME/.hermes"
 
@@ -55,8 +62,11 @@ rsync -avz --update "$PROFILE/skills/" "$SERVER:~/.hermes/skills/"
 rsync -avz --update "$PROFILE/memories/" "$SERVER:~/.hermes/memories/"
 ```
 
+<<<<<<< HEAD
 </details>
 
+=======
+>>>>>>> origin/main
 ## Hermes Agent Installation (from source)
 
 Package name: `hermes-agent` (NOT `hermes-ai` which is an unrelated LlamaIndex package).

@@ -1,14 +1,24 @@
 model:
+<<<<<<< HEAD
   default: qwen2.5-1m-hermes:latest
   provider: custom
   base_url: http://127.0.0.1:11434/v1
+=======
+  default: claude-opus-4-6
+  provider: anthropic
+>>>>>>> origin/main
 providers: {}
 fallback_providers: []
 credential_pool_strategies: {}
 toolsets:
+<<<<<<< HEAD
   - hermes-cli
 max_concurrent_sessions: null
 max_live_sessions: 16
+=======
+- hermes-cli
+max_concurrent_sessions: null
+>>>>>>> origin/main
 agent:
   max_turns: 90
   gateway_timeout: 1800
@@ -284,6 +294,7 @@ auxiliary:
     api_key: ''
     timeout: 120
     extra_body: {}
+<<<<<<< HEAD
   moa_reference:
     provider: auto
     model: ''
@@ -298,6 +309,8 @@ auxiliary:
     api_key: ''
     timeout: 600
     extra_body: {}
+=======
+>>>>>>> origin/main
 display:
   compact: false
   personality: ''
@@ -348,9 +361,15 @@ display:
   runtime_footer:
     enabled: false
     fields:
+<<<<<<< HEAD
       - model
       - context_pct
       - cwd
+=======
+    - model
+    - context_pct
+    - cwd
+>>>>>>> origin/main
   copy_shortcut: auto
   pet:
     enabled: false
@@ -375,9 +394,12 @@ dashboard:
     password: ''
     secret: ''
     session_ttl_seconds: 0
+<<<<<<< HEAD
   drain_auth:
     scope: drain
     min_secret_chars: 43
+=======
+>>>>>>> origin/main
   public_url: ''
 privacy:
   redact_pii: false
@@ -467,6 +489,7 @@ delegation:
 prefill_messages_file: ''
 goals:
   max_turns: 20
+<<<<<<< HEAD
 moa:
   default_preset: default
   active_preset: ''
@@ -484,6 +507,8 @@ moa:
       aggregator_temperature: 0.4
       max_tokens: 4096
       enabled: true
+=======
+>>>>>>> origin/main
 skills:
   external_dirs: []
   template_vars: true
@@ -533,11 +558,19 @@ discord:
     speech_gain: 1.0
     ack_enabled: true
     ack_phrases:
+<<<<<<< HEAD
       - Let me look into that.
       - One moment.
       - Checking on that now.
       - Give me a sec.
       - On it.
+=======
+    - Let me look into that.
+    - One moment.
+    - Checking on that now.
+    - Give me a sec.
+    - On it.
+>>>>>>> origin/main
 whatsapp: {}
 telegram:
   reactions: false
@@ -562,11 +595,19 @@ approvals:
   mcp_reload_confirm: true
   destructive_slash_confirm: true
 command_allowlist:
+<<<<<<< HEAD
   - script execution via -e/-c flag
   - script execution via heredoc
   - delete in root path
   - execute_code
   - recursive delete
+=======
+- script execution via -e/-c flag
+- script execution via heredoc
+- delete in root path
+- execute_code
+- recursive delete
+>>>>>>> origin/main
 quick_commands: {}
 platform_hints: {}
 hooks: {}
@@ -595,7 +636,10 @@ cron:
   wrap_response: true
   mirror_delivery: false
   max_parallel_jobs: null
+<<<<<<< HEAD
   output_retention: 50
+=======
+>>>>>>> origin/main
 code_execution:
   mode: project
   timeout: 300
@@ -685,6 +729,7 @@ session_reset:
 group_sessions_per_user: true
 platform_toolsets:
   cli:
+<<<<<<< HEAD
     - file
     - memory
     - terminal
@@ -728,12 +773,58 @@ known_plugin_toolsets:
     - spotify
   telegram:
     - spotify
+=======
+  - file
+  - memory
+  - terminal
+  telegram:
+  - browser
+  - clarify
+  - code_execution
+  - computer_use
+  - cronjob
+  - delegation
+  - file
+  - image_gen
+  - memory
+  - session_search
+  - skills
+  - terminal
+  - todo
+  - tts
+  - vision
+  - web
+  discord:
+  - hermes-discord
+  whatsapp:
+  - hermes-whatsapp
+  slack:
+  - hermes-slack
+  signal:
+  - hermes-signal
+  homeassistant:
+  - hermes-homeassistant
+  qqbot:
+  - hermes-qqbot
+  yuanbao:
+  - hermes-yuanbao
+  teams:
+  - hermes-teams
+  google_chat:
+  - hermes-google_chat
+known_plugin_toolsets:
+  cli:
+  - spotify
+  telegram:
+  - spotify
+>>>>>>> origin/main
 image_gen:
   provider: openai-codex
   use_gateway: false
   model: gpt-image-2-low
 smart_model_routing:
   enabled: false
+<<<<<<< HEAD
 custom_providers:
   - name: ai_assistant
     base_url: http://127.0.0.1:11434/v1
@@ -767,3 +858,5 @@ custom_providers:
 # fallback_model:
 #   provider: openrouter
 #   model: anthropic/claude-sonnet-4
+=======
+>>>>>>> origin/main

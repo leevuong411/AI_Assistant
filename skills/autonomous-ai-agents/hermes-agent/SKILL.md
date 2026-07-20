@@ -448,6 +448,10 @@ Enable/disable via `hermes tools` (interactive) or `hermes tools enable/disable 
 | `feishu_drive` | Feishu (Lark) drive tools |
 | `yuanbao` | Yuanbao integration tools |
 | `rl` | Reinforcement learning tools (off by default) |
+<<<<<<< HEAD
+=======
+| `moa` | Mixture of Agents (off by default) |
+>>>>>>> origin/main
 
 Full enumeration lives in `toolsets.py` as the `TOOLSETS` dict; `_HERMES_CORE_TOOLS` is the default bundle most platforms inherit from.
 
