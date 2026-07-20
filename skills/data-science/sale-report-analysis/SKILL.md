@@ -106,9 +106,32 @@ Country:
 ### 🎯 Recommendations
 ```
 
+<<<<<<< HEAD
+**Output strictly this format only.** Do not prepend system/infrastructure summaries (e.g. memory
+provider status, Honcho architecture, storage backend) or any other preamble unrelated to the report
+itself — even if such information exists in memory/context. Start the reply directly with `## 📊 REPORT`.
+
+## Data Storage
+**Persist through Honcho, not local files.** Earlier versions of this skill wrote raw markdown to
+`~/.hermes/memories/sale-reports/`. That path is node-local, excluded from Git profile distribution,
+and invisible to Honcho — data written there on one node never reaches the other node (see deployment
+runbook Known Issue #10). All report history must go through Honcho instead, so both server and laptop
+nodes see the same history via the shared workspace.
+
+- After parsing a report, call **`honcho_conclude`** once per region/date with a compact, self-contained
+  fact string, e.g.: `"Sale report LatAm 2026-07-19: Peru D-1=451 GP1=-1597; Colombia D-1=688 GP1=-2988"`
+  (include date, region, per-country D-1/GP1/GP so the fact is retrievable without needing the original message).
+- To read history for trend analysis (previous days/weeks), call **`honcho_search`** with a query naming
+  the region/country/date range — do NOT assume `honcho_context` (session-scoped) will surface older
+  reports, especially ones logged from the other node.
+- If a report was already received as a normal chat message with `memory_enabled: true`, Honcho's deriver
+  already captures it passively — `honcho_conclude` is for reinforcing the **structured, queryable** fact
+  (exact numbers), since passive derivation may compress or drop precise figures.
+=======
 ## Data Storage
 - Asia reports: `~/.hermes/memories/sale-reports/YYYY-MM-DD.md`
 - LatAm reports: `~/.hermes/memories/sale-reports/latam/YYYY-MM-DD.md`
+>>>>>>> origin/main
 
 ## Chart Generation
 See `references/chart-generation.md` for Plotly and ECharts dashboard templates.
@@ -127,7 +150,10 @@ Country color scheme (consistent across all charts):
 - `references/chart-generation.md` — Library comparison, Selenium screenshot patterns, Telegram delivery, dependency list.
 - `references/echarts-dashboard-template.md` — Complete working ECharts HTML dashboard template with KPI cards, data injection, setOption patterns, and full screenshot+delivery pipeline.
 - `references/hermes-dual-bot-setup.md` — Dual Telegram bot architecture, rsync sync, Hermes Agent install (server + macOS), toolset enabling, skills marketplace.
+<<<<<<< HEAD
+=======
 - `references/honcho-memory-setup.md` — Honcho self-hosted memory: Docker architecture, bge-m3 embedding, Hermes integration, CLI commands, API endpoints.
+>>>>>>> origin/main
 
 ## D0 FC Calculation Detail
 - Country-level FC: `lead_early_D0 ÷ avg(lead_early_Dn / total_lead_Dn)` for n in {D-3, D-2, D-1}

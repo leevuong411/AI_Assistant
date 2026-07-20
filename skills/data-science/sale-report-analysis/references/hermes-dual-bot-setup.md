@@ -29,10 +29,29 @@ Two Hermes instances (server + desktop) each with their own Telegram bot:
 
 ## Sync: Skills & Memories
 
+<<<<<<< HEAD
+> ⚠️ **DEPRECATED — do not use the rsync approach below.** It predates the current profile-based
+> setup (server: profile `default` → `~/.hermes/`; laptop: profile `assistant` →
+> `~/.hermes/profiles/assistant/`), so the paths no longer match and running it will not sync the
+> right directories. Current architecture:
+> - **Skills** sync via **Git profile distribution** (`hermes profile update <name>`) — see the
+>   deployment runbook, section "Git Distribution".
+> - **Memory/history** (including sale-report data) syncs via **Honcho self-hosted**, not files —
+>   see this skill's "Data Storage" section (`honcho_conclude` / `honcho_search`). Raw `memories/`
+>   directories are intentionally excluded from both Git and any file sync.
+
+<details>
+<summary>Old rsync script (kept for reference only — do not run)</summary>
+
+```bash
+#!/bin/bash
+# hermes-sync.sh — run on MacBook (OBSOLETE — paths predate profile-based setup)
+=======
 ### Direct rsync (recommended over Git for simplicity)
 ```bash
 #!/bin/bash
 # hermes-sync.sh — run on MacBook
+>>>>>>> origin/main
 SERVER="root@server-ip"
 PROFILE="$HOME/.hermes"
 
@@ -43,6 +62,11 @@ rsync -avz --update "$PROFILE/skills/" "$SERVER:~/.hermes/skills/"
 rsync -avz --update "$PROFILE/memories/" "$SERVER:~/.hermes/memories/"
 ```
 
+<<<<<<< HEAD
+</details>
+
+=======
+>>>>>>> origin/main
 ## Hermes Agent Installation (from source)
 
 Package name: `hermes-agent` (NOT `hermes-ai` which is an unrelated LlamaIndex package).
