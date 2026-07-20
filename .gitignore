@@ -1,0 +1,12 @@
+/*
+!.gitignore
+!distribution.yaml
+!SOUL.md
+!config.yaml
+!skills/
+skills/.hub/
+skills/.curator_backups/
+skills/.usage.json
+skills/.usage.json.lock
+skills/.curator_state
+skills/.bundled_manifest
