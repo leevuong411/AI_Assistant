@@ -121,60 +121,82 @@ laptop nodes see the same history via the shared workspace.
 **Use structured metadata, not plain chat/honcho_conclude text.** A plain chat reply or a
 `honcho_conclude` natural-language fact gets stored with **empty metadata (`{}`)** — the OTHER node
 cannot filter/verify it by date, even though the text technically exists and is semantically searchable
-(see Known Issue #15). The proven-working format (already used by the server node for its historical
-backfill) posts the report **directly as a Honcho message with a metadata payload**, via `execute_code`
-+ `requests.post` to the Honcho API (same host/workspace as configured in `honcho.json`):
+(see Known Issue #15).
+
+**Both nodes MUST run the exact code below, verbatim — do not improvise your own script.** Improvised
+per-day loops with a different HTTP client caused repeated false "missing data" reports on the server
+node (timeouts mid-loop were mis-read as "not found") even when the data was fully present (Known Issue
+#16). Only `BASE` differs per node (server: `http://localhost:8000`; laptop: `http://<server-tailscale-ip>:8000`).
+Uses `urllib` (stdlib) intentionally — `requests` is not guaranteed to be installed in every node's
+`execute_code` sandbox.
 
 ```python
-import requests
-BASE = "http://<honcho-host>:8000"   # server: localhost; laptop: server's Tailscale IP
+import json, urllib.request, time
+
+BASE = "http://localhost:8000"   # laptop: replace with server's Tailscale IP
 WORKSPACE = "shared"
 SESSION = "agent-main-telegram-dm-<chat_id>"   # the real production session, not a throwaway one
 PEER = "<this-node's-peer-id>"                 # claude-server or qwen-laptop
 
-requests.post(f"{BASE}/v3/workspaces/{WORKSPACE}/sessions/{SESSION}/messages", json={
-    "messages": [{
-        "peer_id": PEER,
-        "content": f"[SALE-REPORT-{region.upper()}] [DATE:{date}] [REGION:{region.upper()}]\n{full_report_text}",
-        "metadata": {
-            "date": date,                     # "2026-07-19"
-            "type": f"sale-report-{region}",  # "sale-report-asia" | "sale-report-latam"
-            "region": region,                 # "asia" | "latam"
-            "source": "file-import-v2",       # keep this literal value for cross-node consistency
-            "day_label": f"Report {date}",
-            "searchable_date": date.replace("-", "/"),  # "2026/07/19"
-        },
-    }]
-})
+def _post(path, payload, retries=3):
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(f"{BASE}{path}", data=data,
+                                  headers={"Content-Type": "application/json"}, method="POST")
+    for attempt in range(retries):
+        try:
+            with urllib.request.urlopen(req, timeout=25) as resp:
+                return json.loads(resp.read())
+        except Exception:
+            if attempt == retries - 1:
+                raise
+            time.sleep(2)
+
+def persist_report(region, date, full_report_text):
+    """region: 'asia' | 'latam'.  date: 'YYYY-MM-DD'.  full_report_text: the RAW pasted report, unmodified."""
+    content = f"[SALE-REPORT-{region.upper()}] [DATE:{date}] [REGION:{region.upper()}]\n{full_report_text}"
+    return _post(f"/v3/workspaces/{WORKSPACE}/sessions/{SESSION}/messages", {
+        "messages": [{
+            "peer_id": PEER,
+            "content": content,
+            "metadata": {
+                "date": date,
+                "type": f"sale-report-{region}",
+                "region": region,
+                "source": "file-import-v2",       # keep this literal value for cross-node consistency
+                "day_label": f"Report {date}",
+                "searchable_date": date.replace("-", "/"),
+            },
+        }]
+    })
+
+def verify_coverage(region):
+    """Exact metadata filter — NOT semantic search. Returns every matching date, paginated fully."""
+    all_items, page = [], 1
+    while True:
+        resp = _post(f"/v3/workspaces/{WORKSPACE}/sessions/{SESSION}/messages/list", {
+            "page": page, "size": 50,
+            "filters": {"metadata": {"region": region, "source": "file-import-v2"}},
+        })
+        all_items += resp["items"]
+        if len(resp["items"]) < 50:
+            break
+        page += 1
+    return sorted(set(m["metadata"]["date"] for m in all_items))
+
+# Usage:
+# persist_report("asia", "2026-07-19", full_report_text)   # one call per region/date, FULL raw text
+# for region in ["asia", "latam"]:
+#     print(region, verify_coverage(region))
 ```
-- One call per region/date, with the FULL original report text in `content` (not a compressed summary) —
-  metadata alone is not enough, the raw figures must stay retrievable too.
-- To read history for trend analysis (a real user question, approximate is fine), call **`honcho_search`**
-  with a query naming the region/country — do NOT assume `honcho_context` (session-scoped) will surface
-  older reports, especially ones logged from the other node.
-
-### Verifying coverage — ALWAYS use exact metadata filter, NEVER semantic search
-`honcho_search`/`honcho_context` rank by embedding similarity — they can miss exact-date entries even
-when the data fully exists (see Known Issue #15; this cost significant back-and-forth before being
-caught). Any request to "check/verify/count" data by date **must** run this exact-match query via
-`execute_code`, not a conversational search:
-
-```python
-import requests
-BASE = "http://<honcho-host>:8000"
-WORKSPACE = "shared"
-SESSION = "agent-main-telegram-dm-<chat_id>"
-
-resp = requests.post(f"{BASE}/v3/workspaces/{WORKSPACE}/sessions/{SESSION}/messages/list", json={
-    "page": 1, "size": 50,
-    "filters": {"metadata": {"region": "asia", "source": "file-import-v2"}},  # repeat for region: latam
-}).json()
-dates = sorted(m["metadata"]["date"] for m in resp["items"])
-print(f"total={resp['total']}  dates={dates}")
-# paginate (page=2, 3, ...) while len(items) == size, until total is covered
-```
-This is a hard DB filter, not a ranked top-K search — it returns every matching row regardless of
-semantic relevance. Report coverage results (found/missing dates) ONLY from this method's output.
+- One `persist_report` call per region/date, with the FULL original report text (not a compressed
+  summary) — metadata alone is not enough, the raw figures must stay retrievable too.
+- **Any request to check/verify/count data by date MUST call `verify_coverage()` and report its output
+  directly** — never `honcho_search`/`honcho_context` for this purpose (see Known Issue #15), and never a
+  hand-written alternative (Known Issue #16). `verify_coverage()` is a hard DB filter, not a ranked
+  top-K search — it returns every matching row regardless of semantic relevance.
+- To read history for open-ended trend analysis (a real user question, approximate is fine), `honcho_search`
+  with a query naming the region/country is acceptable — do NOT assume `honcho_context` (session-scoped)
+  will surface older reports, especially ones logged from the other node.
 
 ## Chart Generation
 See `references/chart-generation.md` for Plotly and ECharts dashboard templates.
