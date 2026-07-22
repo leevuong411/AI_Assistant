@@ -117,15 +117,43 @@ and invisible to Honcho — data written there on one node never reaches the oth
 runbook Known Issue #10). All report history must go through Honcho instead, so both server and laptop
 nodes see the same history via the shared workspace.
 
-- After parsing a report, call **`honcho_conclude`** once per region/date with a compact, self-contained
-  fact string, e.g.: `"Sale report LatAm 2026-07-19: Peru D-1=451 GP1=-1597; Colombia D-1=688 GP1=-2988"`
-  (include date, region, per-country D-1/GP1/GP so the fact is retrievable without needing the original message).
-- To read history for trend analysis (previous days/weeks), call **`honcho_search`** with a query naming
-  the region/country/date range — do NOT assume `honcho_context` (session-scoped) will surface older
-  reports, especially ones logged from the other node.
-- If a report was already received as a normal chat message with `memory_enabled: true`, Honcho's deriver
-  already captures it passively — `honcho_conclude` is for reinforcing the **structured, queryable** fact
-  (exact numbers), since passive derivation may compress or drop precise figures.
+**Use structured metadata, not plain chat/honcho_conclude text.** A plain chat reply or a
+`honcho_conclude` natural-language fact gets stored with **empty metadata (`{}`)** — the OTHER node
+cannot filter/verify it by date, even though the text technically exists and is semantically searchable
+(see Known Issue #15). The proven-working format (already used by the server node for its historical
+backfill) posts the report **directly as a Honcho message with a metadata payload**, via `execute_code`
++ `requests.post` to the Honcho API (same host/workspace as configured in `honcho.json`):
+
+```python
+import requests
+BASE = "http://<honcho-host>:8000"   # server: localhost; laptop: server's Tailscale IP
+WORKSPACE = "shared"
+SESSION = "agent-main-telegram-dm-<chat_id>"   # the real production session, not a throwaway one
+PEER = "<this-node's-peer-id>"                 # claude-server or qwen-laptop
+
+requests.post(f"{BASE}/v3/workspaces/{WORKSPACE}/sessions/{SESSION}/messages", json={
+    "messages": [{
+        "peer_id": PEER,
+        "content": f"[SALE-REPORT-{region.upper()}] [DATE:{date}] [REGION:{region.upper()}]\n{full_report_text}",
+        "metadata": {
+            "date": date,                     # "2026-07-19"
+            "type": f"sale-report-{region}",  # "sale-report-asia" | "sale-report-latam"
+            "region": region,                 # "asia" | "latam"
+            "source": "file-import-v2",       # keep this literal value for cross-node consistency
+            "day_label": f"Report {date}",
+            "searchable_date": date.replace("-", "/"),  # "2026/07/19"
+        },
+    }]
+})
+```
+- One call per region/date, with the FULL original report text in `content` (not a compressed summary) —
+  metadata alone is not enough, the raw figures must stay retrievable too.
+- To verify/count coverage by date, filter on `metadata.date` (exact match) — do NOT rely on semantic
+  `honcho_search` alone for completeness checks, since ranking-based search can miss exact-date entries
+  when many similar reports exist (see Known Issue #15).
+- To read history for trend analysis, call **`honcho_search`** with a query naming the region/country —
+  do NOT assume `honcho_context` (session-scoped) will surface older reports, especially ones logged from
+  the other node.
 
 ## Chart Generation
 See `references/chart-generation.md` for Plotly and ECharts dashboard templates.
