@@ -111,11 +111,12 @@ provider status, Honcho architecture, storage backend) or any other preamble unr
 itself — even if such information exists in memory/context. Start the reply directly with `## 📊 REPORT`.
 
 ## Data Storage
-**Persist through Honcho, not local files.** Earlier versions of this skill wrote raw markdown to
-`~/.hermes/memories/sale-reports/`. That path is node-local, excluded from Git profile distribution,
-and invisible to Honcho — data written there on one node never reaches the other node (see deployment
-runbook Known Issue #10). All report history must go through Honcho instead, so both server and laptop
-nodes see the same history via the shared workspace.
+**Persist through Honcho ONLY — never write local files.** `~/.hermes/memories/sale-reports/` (and any
+other node-local path) is FORBIDDEN for this skill. It is excluded from Git profile distribution and
+invisible to Honcho — data written there on one node never reaches the other node (see deployment
+runbook Known Issue #10). This path has been deleted from both nodes; do not recreate it, and do not
+add any file-write fallback "just in case." All report history goes through Honcho, so both server and
+laptop nodes see the same history via the shared workspace.
 
 **Use structured metadata, not plain chat/honcho_conclude text.** A plain chat reply or a
 `honcho_conclude` natural-language fact gets stored with **empty metadata (`{}`)** — the OTHER node
@@ -148,12 +149,32 @@ requests.post(f"{BASE}/v3/workspaces/{WORKSPACE}/sessions/{SESSION}/messages", j
 ```
 - One call per region/date, with the FULL original report text in `content` (not a compressed summary) —
   metadata alone is not enough, the raw figures must stay retrievable too.
-- To verify/count coverage by date, filter on `metadata.date` (exact match) — do NOT rely on semantic
-  `honcho_search` alone for completeness checks, since ranking-based search can miss exact-date entries
-  when many similar reports exist (see Known Issue #15).
-- To read history for trend analysis, call **`honcho_search`** with a query naming the region/country —
-  do NOT assume `honcho_context` (session-scoped) will surface older reports, especially ones logged from
-  the other node.
+- To read history for trend analysis (a real user question, approximate is fine), call **`honcho_search`**
+  with a query naming the region/country — do NOT assume `honcho_context` (session-scoped) will surface
+  older reports, especially ones logged from the other node.
+
+### Verifying coverage — ALWAYS use exact metadata filter, NEVER semantic search
+`honcho_search`/`honcho_context` rank by embedding similarity — they can miss exact-date entries even
+when the data fully exists (see Known Issue #15; this cost significant back-and-forth before being
+caught). Any request to "check/verify/count" data by date **must** run this exact-match query via
+`execute_code`, not a conversational search:
+
+```python
+import requests
+BASE = "http://<honcho-host>:8000"
+WORKSPACE = "shared"
+SESSION = "agent-main-telegram-dm-<chat_id>"
+
+resp = requests.post(f"{BASE}/v3/workspaces/{WORKSPACE}/sessions/{SESSION}/messages/list", json={
+    "page": 1, "size": 50,
+    "filters": {"metadata": {"region": "asia", "source": "file-import-v2"}},  # repeat for region: latam
+}).json()
+dates = sorted(m["metadata"]["date"] for m in resp["items"])
+print(f"total={resp['total']}  dates={dates}")
+# paginate (page=2, 3, ...) while len(items) == size, until total is covered
+```
+This is a hard DB filter, not a ranked top-K search — it returns every matching row regardless of
+semantic relevance. Report coverage results (found/missing dates) ONLY from this method's output.
 
 ## Chart Generation
 See `references/chart-generation.md` for Plotly and ECharts dashboard templates.
