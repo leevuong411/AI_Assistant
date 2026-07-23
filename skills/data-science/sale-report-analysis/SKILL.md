@@ -123,15 +123,21 @@ laptop nodes see the same history via the shared workspace.
 cannot filter/verify it by date, even though the text technically exists and is semantically searchable
 (see Known Issue #15).
 
+**Run this via the `terminal` tool — NEVER `execute_code`.** `execute_code` is a restricted sandbox that
+cannot reliably see the real filesystem (`~/.hermes/...`) or the venv (see Pitfall #10, same root cause
+as missing matplotlib/selenium). Reading `honcho.json` from inside `execute_code` fails with
+`FileNotFoundError`, and that failure gets silently swallowed into a bare `False` instead of a visible
+error — this is exactly what happened on the laptop node (Known Issue #18) even after the `BASE`
+hard-coding bug (Known Issue #17) was fixed. Use `terminal` with `python3 <<'PY' ... PY` (heredoc) or
+write the script to a temp file first, exactly like the chart-generation skill already does.
+
 **Both nodes MUST run the exact code below, verbatim — do not improvise your own script, and do not
-hand-type `BASE`/`PEER`.** Two distinct failures already happened from manual substitution: (a) improvised
-per-day loops with a different HTTP client caused false "missing data" reports when timeouts mid-loop
-were mis-read as "not found" (Known Issue #16), and (b) the laptop node once hard-coded `BASE =
-"http://localhost:8000"` (copied verbatim from a stale example) — `localhost` has no Honcho on the
-laptop, every call failed, and the failure was silently swallowed into a bare `False` instead of
-surfacing an error (Known Issue #17). **`BASE`/`PEER`/`WORKSPACE` must be read from this node's own
-`honcho.json`** — never typed manually — so the exact same code is 100% portable across both nodes with
-zero edits:
+hand-type `BASE`/`PEER`.** Two earlier failures came from manual substitution: (a) improvised per-day
+loops with a different HTTP client caused false "missing data" reports when timeouts mid-loop were
+mis-read as "not found" (Known Issue #16), and (b) the laptop node once hard-coded `BASE =
+"http://localhost:8000"` (copied verbatim from a stale example) instead of its own address (Known Issue
+#17). **`BASE`/`PEER`/`WORKSPACE` must be read from this node's own `honcho.json`** — never typed
+manually — so the exact same code is 100% portable across both nodes with zero edits:
 
 ```python
 import json, os, glob, urllib.request, time
