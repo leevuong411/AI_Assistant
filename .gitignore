@@ -4,6 +4,7 @@
 !SOUL.md
 !config.yaml
 !skills/
+!scripts/
 skills/.hub/
 skills/.curator_backups/
 skills/.usage.json
