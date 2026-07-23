@@ -123,20 +123,34 @@ laptop nodes see the same history via the shared workspace.
 cannot filter/verify it by date, even though the text technically exists and is semantically searchable
 (see Known Issue #15).
 
-**Both nodes MUST run the exact code below, verbatim — do not improvise your own script.** Improvised
-per-day loops with a different HTTP client caused repeated false "missing data" reports on the server
-node (timeouts mid-loop were mis-read as "not found") even when the data was fully present (Known Issue
-#16). Only `BASE` differs per node (server: `http://localhost:8000`; laptop: `http://<server-tailscale-ip>:8000`).
-Uses `urllib` (stdlib) intentionally — `requests` is not guaranteed to be installed in every node's
-`execute_code` sandbox.
+**Both nodes MUST run the exact code below, verbatim — do not improvise your own script, and do not
+hand-type `BASE`/`PEER`.** Two distinct failures already happened from manual substitution: (a) improvised
+per-day loops with a different HTTP client caused false "missing data" reports when timeouts mid-loop
+were mis-read as "not found" (Known Issue #16), and (b) the laptop node once hard-coded `BASE =
+"http://localhost:8000"` (copied verbatim from a stale example) — `localhost` has no Honcho on the
+laptop, every call failed, and the failure was silently swallowed into a bare `False` instead of
+surfacing an error (Known Issue #17). **`BASE`/`PEER`/`WORKSPACE` must be read from this node's own
+`honcho.json`** — never typed manually — so the exact same code is 100% portable across both nodes with
+zero edits:
 
 ```python
-import json, urllib.request, time
+import json, os, glob, urllib.request, time
 
-BASE = "http://localhost:8000"   # laptop: replace with server's Tailscale IP
-WORKSPACE = "shared"
+def _load_honcho_config():
+    candidates = [
+        os.path.expanduser("~/.hermes/honcho.json"),                       # server: profile default
+        os.path.expanduser("~/.hermes/profiles/assistant/honcho.json"),    # laptop: profile assistant
+    ] + glob.glob(os.path.expanduser("~/.hermes/profiles/*/honcho.json"))
+    for path in candidates:
+        if os.path.isfile(path):
+            with open(path, encoding="utf-8") as f:
+                cfg = json.load(f)
+            host = next(iter(cfg["hosts"].values()))
+            return cfg["baseUrl"], host["workspace"], host["peerName"]
+    raise FileNotFoundError("No honcho.json found in any known profile path")
+
+BASE, WORKSPACE, PEER = _load_honcho_config()
 SESSION = "agent-main-telegram-dm-<chat_id>"   # the real production session, not a throwaway one
-PEER = "<this-node's-peer-id>"                 # claude-server or qwen-laptop
 
 def _post(path, payload, retries=3):
     data = json.dumps(payload).encode("utf-8")
